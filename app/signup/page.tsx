@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
+import { registerUser } from "@/lib/api"
+import { toast } from "sonner"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -23,27 +25,47 @@ export default function SignupPage() {
     confirmPassword: "",
     reason: "",
   })
+  const [error, setError] = useState("")
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+    setError("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (step === 1) {
+      // Vérifier que les mots de passe correspondent
+      if (formData.password !== formData.confirmPassword) {
+        setError("Les mots de passe ne correspondent pas")
+        return
+      }
       setStep(2)
       return
     }
 
     setIsLoading(true)
+    setError("")
 
-    // Simulate signup process
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      // Envoyer les données d'inscription à l'API
+      await registerUser({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        motivation: formData.reason
+      })
+      
+      // Rediriger vers la page d'attente d'approbation
       router.push("/pending-approval")
-    }, 1500)
+      toast.success("Inscription réussie! Votre demande est en attente d'approbation.")
+    } catch (error: any) {
+      setIsLoading(false)
+      setError(error.message || "Une erreur est survenue lors de l'inscription")
+      toast.error("Erreur d'inscription: " + error.message)
+    }
   }
 
   return (
@@ -59,24 +81,25 @@ export default function SignupPage() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <CardTitle className="text-2xl text-white">{step === 1 ? "Create an Account" : "Request Access"}</CardTitle>
+            <CardTitle className="text-2xl text-white">{step === 1 ? "Créer un compte" : "Demande d'accès"}</CardTitle>
           </div>
           <CardDescription className="text-zinc-400">
-            {step === 1 ? "Fill in your details to create a new account" : "Tell us why you want to join GamErz"}
+            {step === 1 ? "Remplissez vos coordonnées pour créer un nouveau compte" : "Dites-nous pourquoi vous voulez rejoindre GamErz"}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {error && <p className="text-red-500 text-sm">{error}</p>}
             {step === 1 ? (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="username" className="text-zinc-300">
-                    Username
+                    Nom d'utilisateur
                   </Label>
                   <Input
                     id="username"
                     name="username"
-                    placeholder="Choose a username"
+                    placeholder="Choisissez un nom d'utilisateur"
                     required
                     value={formData.username}
                     onChange={handleChange}
@@ -91,7 +114,7 @@ export default function SignupPage() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="your.email@example.com"
+                    placeholder="votre.email@exemple.com"
                     required
                     value={formData.email}
                     onChange={handleChange}
@@ -100,7 +123,7 @@ export default function SignupPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-zinc-300">
-                    Password
+                    Mot de passe
                   </Label>
                   <Input
                     id="password"
@@ -115,7 +138,7 @@ export default function SignupPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword" className="text-zinc-300">
-                    Confirm Password
+                    Confirmer le mot de passe
                   </Label>
                   <Input
                     id="confirmPassword"
@@ -132,32 +155,32 @@ export default function SignupPage() {
             ) : (
               <div className="space-y-2">
                 <Label htmlFor="reason" className="text-zinc-300">
-                  Why do you want to join GamErz?
+                  Pourquoi voulez-vous rejoindre GamErz?
                 </Label>
                 <Textarea
                   id="reason"
                   name="reason"
-                  placeholder="Tell us about yourself and why you want to join our community..."
+                  placeholder="Parlez-nous de vous et pourquoi vous voulez rejoindre notre communauté..."
                   required
                   value={formData.reason}
                   onChange={handleChange}
                   className="bg-zinc-800 border-zinc-700 text-white min-h-[120px]"
                 />
                 <p className="text-xs text-zinc-500">
-                  Your request will be reviewed by an administrator. This helps us maintain a positive community.
+                  Votre demande sera examinée par un administrateur. Cela nous aide à maintenir une communauté positive.
                 </p>
               </div>
             )}
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white" disabled={isLoading}>
-              {step === 1 ? "Continue" : isLoading ? "Submitting..." : "Submit Request"}
+              {step === 1 ? "Continuer" : isLoading ? "Soumission en cours..." : "Soumettre la demande"}
             </Button>
             {step === 1 && (
               <p className="text-sm text-zinc-400 text-center">
-                Already have an account?{" "}
+                Vous avez déjà un compte?{" "}
                 <Link href="/login" className="text-red-500 hover:text-red-400">
-                  Login
+                  Connexion
                 </Link>
               </p>
             )}

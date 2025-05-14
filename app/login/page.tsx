@@ -17,10 +17,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { loginUser } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -29,17 +32,29 @@ export default function LoginPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Connexion via l'API
+      const userData = await loginUser({
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      // Rediriger vers le tableau de bord après connexion réussie
+      toast.success("Connexion réussie!");
       router.push("/dashboard");
-    }, 1500);
+    } catch (error: any) {
+      setIsLoading(false);
+      setError(error.message || "Erreur lors de la connexion");
+      toast.error("Erreur de connexion: " + error.message);
+    }
   };
 
   return (
@@ -58,15 +73,16 @@ export default function LoginPage() {
               </Link>
             </Button>
             <CardTitle className="text-2xl text-white">
-              Login to GamErz
+              Connexion à GamErz
             </CardTitle>
           </div>
           <CardDescription className="text-zinc-400">
-            Enter your credentials to access your account
+            Entrez vos identifiants pour accéder à votre compte
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {error && <p className="text-red-500 text-sm">{error}</p>}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-zinc-300">
                 Email
@@ -75,7 +91,7 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="your.email@example.com"
+                placeholder="votre.email@exemple.com"
                 required
                 value={formData.email}
                 onChange={handleChange}
@@ -85,13 +101,13 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-zinc-300">
-                  Password
+                  Mot de passe
                 </Label>
                 <Link
                   href="/forgot-password"
                   className="text-xs text-red-500 hover:text-red-400"
                 >
-                  Forgot password?
+                  Mot de passe oublié?
                 </Link>
               </div>
               <Input
@@ -112,12 +128,12 @@ export default function LoginPage() {
               className="w-full bg-red-600 hover:bg-red-700 text-white"
               disabled={isLoading}
             >
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading ? "Connexion en cours..." : "Se connecter"}
             </Button>
             <p className="text-sm text-zinc-400 text-center">
-              Don&apos;t have an account?{" "}
+              Vous n&apos;avez pas de compte?{" "}
               <Link href="/signup" className="text-red-500 hover:text-red-400">
-                Sign up
+                S&apos;inscrire
               </Link>
             </p>
           </CardFooter>
